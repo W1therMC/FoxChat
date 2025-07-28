@@ -1,0 +1,22 @@
+{
+  "name": "foxchat-production",
+  "version": "1.0.0",
+  "description": "FoxChat - Real-time VHS-style chat application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.6.0",
+    "drizzle-orm": "^0.28.6",
+    "express": "^4.18.2",
+    "ws": "^8.14.2"
+  },
+  "keywords": ["chat", "websocket", "vhs", "retro", "realtime"],
+  "author": "FoxChat Team",
+  "license": "MIT"
+}

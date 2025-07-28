@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FoxChat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --primary-mor: #5b3fbd;
+      --bg-mor: #22203a;
+      --fg: #f8f8ff;
+      --accent: #ffe48c;
+      --shadow: 0 6px 24px #0003;
+      --radius: 14px;
+    }
+    body {
+      margin: 0; padding: 0; min-height: 100vh;
+      background: var(--bg-mor);
+      color: var(--fg);
+      font-family: "Segoe UI", Consolas, monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s;
+      direction: ltr;
+    }
+    body[dir="rtl"] {
+      direction: rtl;
+    }
+    .logo-ascii {
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 12px;
+      color: #a577ff;
+      text-align: center;
+      margin: 18px 0 2px 0;
+      user-select: all;
+      white-space: pre;
+      max-width: 320px;
+      overflow-x: auto;
+    }
+    .foxchat-title {
+      font-size: 1.7rem;
+      font-weight: bold;
+      letter-spacing: 2.2px;
+      color: var(--accent);
+      margin-bottom: 7px;
+      text-shadow: 0 3px 12px #ff900029;
+      text-align: center;
+    }
+    .foxchat-card {
+      background: #30245fdd;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px 22px 12px 22px;
+      max-width: 345px;
+      min-width: 220px;
+      margin-bottom: 12px;
+      margin-top: 9px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 2.7px solid var(--primary-mor);
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .foxchat-card label {
+      font-weight: bold;
+      color: var(--accent);
+      display: block;
+      margin-top: 8px;
+      margin-bottom: 3px;
+      font-size: 1.04em;
+    }
+    .foxchat-card input[type="text"] {
+      width: 96%;
+      font-size: 1.05em;
+      margin-bottom: 8px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1.3px solid #9994;
+      background: #33285d;
+      color: #fff;
+      outline: none;
+      box-shadow: 0 2px 6px #3c297313;
+      transition: box-shadow 0.2s;
+    }
+    .foxchat-card .joinbtn {
+      margin-top: 13px;
+      width: 100%;
+      padding: 10px 0;
+      border-radius: 7px;
+      border: none;
+      font-size: 1.12em;
+      background: linear-gradient(90deg, #5b3fbd, #ba82eb 90%);
+      color: #fff;
+      font-weight: bold;
+      letter-spacing: 1px;
+      transition: background 0.2s;
+      cursor: pointer;
+      box-shadow: 0 3px 8px #261c6725;
+    }
+    .err {
+      color: #ff8b8b;
+      font-size: 0.93em;
+      min-height: 1.2em;
+      text-align: center;
+    }
+    .disclaimer {
+      margin-top: 14px;
+      font-size: 0.92em;
+      text-align: left;
+      background: #292664b4;
+      color: #efcd8f;
+      padding: 11px 12px;
+      border-radius: 8px;
+      border: 1.5px dashed #bcabb0;
+      unicode-bidi: embed;
+      user-select:none;
+    }
+    .foxchat-main {
+      max-width: 570px;
+      width: 100%;
+      margin: auto;
+    }
+    .msgboard {
+      margin: auto;
+      margin-top: 18px;
+      border-radius: var(--radius);
+      padding: 17px 9px;
+      min-height: 140px;
+      max-height: 260px;
+      overflow-y: auto;
+      background: #231c38e8;
+      border: 1.6px solid #67599e;
+      box-shadow: var(--shadow);
+      font-size: 1.04em;
+      user-select:none;
+    }
+    .mymsg {
+      color: #8bf7ae;
+    }
+    .sysmsg {
+      color: #fff6be;
+      font-style: italic;
+    }
+    .usermsg {
+      color: #f5d1ff;
+    }
+    .msg-row {
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+    .msg-username {
+      font-weight: bold;
+      margin-right: 9px;
+      color: #6e4cd3;
+      user-select:text;
+    }
+    .msg-input-row {
+      display: flex;
+      gap: 7px;
+      margin-top: 7px;
+    }
+    .msg-input-row input[type="text"] {
+      flex: 1;
+      font-size: 1.07em;
+      padding: 8px 10px;
+      background: #322b61;
+      border: 1.2px solid #b07fff;
+      color: #fff;
+      border-radius: 6px;
+    }
+    .msg-input-row button {
+      font-size: 1em;
+      padding: 7px 13px;
+      border-radius: 6px;
+      border: none;
+      background: var(--primary-mor);
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 7px #9a7aff25;
+      transition: background 0.2s;
+      user-select:none;
+    }
+    .room-admin-panel {
+      margin: 11px 0;
+      width: 100%;
+      color: #efcd8f;
+      font-size: 0.9em;
+      user-select:none;
+      border: 1.5px dashed #bcabb0;
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 10px;
+    }
+    .userlist-row {
+      margin: 6px 0 2px 0;
+      font-size: 0.98em;
+      user-select:none;
+    }
+    .userkick-btn {
+      margin-left: 7px;
+      color: #e35757;
+      background: none;
+      border: 1.5px solid #e35757;
+      border-radius: 4px;
+      font-size: 0.95em;
+      cursor: pointer;
+      user-select:none;
+    }
+    .userkick-btn[disabled] {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .block-notice {
+      margin-top: 16px;
+      padding: 13px 12px;
+      color: #ffe0e0;
+      background: #571524cf;
+      border-radius: 8px;
+      border: 1.5px solid #ee729c;
+      font-size: 0.98em;
+      user-select:none;
+      text-align: center;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      color: #bcadde;
+      opacity: 0.76;
+      font-size: 0.94em;
+      user-select:none;
+    }
+    @media (max-width: 570px) {
+      .foxchat-card {
+        min-width: 80vw;
+        max-width: 98vw;
+      }
+      .logo-ascii {
+        font-size: 10px;
+        line-height: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <pre class="logo-ascii" aria-label="FoxChat ASCII logo">
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⠙⠻⢶⣄⡀⠀⠀⠀⢀⣤⠶⠛⠛⡇⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣇⠀⠀⣙⣿⣦⣤⣴⣿⣁⠀⠀⣸⠇⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⣡⣾⣿⣿⣿⣿⣿⣿⣿⣷⣌⠋⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⣷⣄⡈⢻⣿⡟⢁⣠⣾⣿⣦⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⣿⠘⣿⠃⣿⣿⣿⣿⡏⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠀⠈⠛⣰⠿⣆⠛⠁⠀⡀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⣿⣦⠀⠘⠛⠋⠀⣴⣿⠁⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⣶⣾⣿⣿⣿⣿⡇⠀⠀⠀⢸⣿⣏⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⣠⣶⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⠀⠀⠀⠾⢿⣿⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⣠⣿⣿⣿⣿⣿⣿⡿⠟⠋⣁⣠⣤⣤⡶⠶⠶⣤⣄⠈⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⢰⣿⣿⣮⣉⣉⣉⣤⣴⣶⣿⣿⣋⡥⠄⠀⠀⠀⠀⠉⢻⣄⠀⠀⠀⠀⠀
+⠀⠀⠀⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣋⣁⣤⣀⣀⣤⣤⣤⣤⣄⣿⡄⠀⠀⠀⠀
+⠀⠀⠀⠀⠙⠿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠛⠋⠉⠁⠀⠀⠀⠀⠈⠛⠃⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠉⠉⠉⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+  </pre>
+
+  <div class="foxchat-title" id="foxchatTitle">FoxChat</div>
+
+  <div id="mainScreen">
+    <div class="foxchat-card" id="fcCard">
+      <label for="languageSelect" id="labelLang">Language:</label>
+      <select id="languageSelect" style="width: 100%; margin-bottom: 8px; border-radius: 6px; padding: 6px;">
+        <option value="en" selected>English</option>
+        <option value="tr">Türkçe</option>
+        <option value="es">Español</option>
+        <option value="ru">Русский</option>
+        <option value="ar">العربية</option>
+      </select>
+
+      <label for="username" id="labelUserName">Username:</label>
+      <input
+        type="text"
+        id="username"
+        maxlength="20"
+        placeholder="Enter a name"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+
+      <label for="seed" id="labelSeed">Room Code (Seed):</label>
+      <input
+        type="text"
+        id="seed"
+        maxlength="24"
+        placeholder="Common seed (leave blank for random)"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+
+      <button class="joinbtn" id="joinBtn" onclick="joinRoom()">Join Room</button>
+      <div class="err" id="errNote"></div>
+
+      <div class="disclaimer" id="disclaimerText">
+        ☑ This site does NOT STORE or keep user data centrally.<br />
+        ☑ Messages stay in RAM and are deleted on page exit/refresh.<br />
+        ☑ The temporary room is shared by everyone with the same <b>Seed</b> and optional <b>password</b>.<br />
+        <b>WARNING:</b> Only present users can see written messages. No past data is kept.
+      </div>
+    </div>
+  </div>
+
+  <div id="chatScreen" style="display:none;">
+    <div class="foxchat-card" style="padding-top: 15px; padding-bottom: 9px;">
+      <div id="inRoomName"></div>
+      <div>
+        <small>Seed: <span id="showSeed"></span><span id="showHidden" style="color:#bfa;">&nbsp;</span></small>
+      </div>
+
+      <!-- Komut açıklaması -->
+      <div class="room-admin-panel" id="roomadmin"></div>
+
+      <div class="err" id="chatSysMsg"></div>
+      <div id="userlist"></div>
+      <div class="block-notice" id="blockInfo" style="display:none;"></div>
+    </div>
+    <div class="foxchat-main">
+      <div class="msgboard" id="board"></div>
+      <form id="msgForm" class="msg-input-row" onsubmit="sendMsg(event)">
+        <input
+          type="text"
+          id="msgText"
+          maxlength="150"
+          autocomplete="off"
+          placeholder="Write your message..."
+          spellcheck="false"
+          autocorrect="off"
+          autocapitalize="off"
+          required
+          autofocus
+        />
+        <button type="submit" id="sendBtn">Send</button>
+        <button type="button" id="leaveBtn" onclick="leaveRoom()" style="margin-left:4px;background:#cc4a4a;color:#fff;">Leave</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="footer">by: W1therMC</div>
+
+  <script>
+    const translations = {
+      en: {
+        labelLang: "Language:",
+        labelUserName: "Username:",
+        labelSeed: "Room Code (Seed):",
+        joinBtn: "Join Room",
+        disclaimerText:
+          "☑ This site does NOT STORE or keep user data centrally.<br />☑ Messages stay in RAM and are deleted on page exit/refresh.<br />☑ The temporary room is shared by everyone with the same <b>Seed</b> and optional <b>password</b>.<br /><b>WARNING:</b> Only present users can see written messages. No past data is kept.",
+        msgPlaceholder: "Write your message...",
+        sendBtn: "Send",
+        leaveBtn: "Leave",
+        errUsername: "Please enter your username.",
+        errUsernameInvalid: "Invalid username (2-20 chars letters/numbers/._-).",
+        errBanRoom: "You are banned from this room.",
+        errRoomFull: "Room is full.",
+        errKickCooldown: "You can only kick one user per minute.",
+        kickMsg: "User kicked from room.",
+        errorSpamMsg: "You're sending messages too fast, please wait.",
+        cmdNotLeader: "Only the leader can use this command.",
+        cmdUnknown: "Unknown command.",
+        cmdKickUsage: "Usage: /kick username",
+        cmdPasswordUsage: "Usage: /password newpassword",
+        cmdMaxUserUsage: "Usage: /maxuser",
+        exitMsg: "You left the room.",
+        userEntered: "joined the room.",
+        userLeft: "left the room.",
+        usernamePlaceholder: "Enter a name",
+        seedPlaceholder: "Common seed (leave blank for random)",
+        commandHelpText: "Commands: /exit, /kick username, /password newpass, /maxuser"
+      },
+      tr: {
+        labelLang: "Dil:",
+        labelUserName: "Kullanıcı Adı:",
+        labelSeed: "Oda Kodu (Seed):",
+        joinBtn: "Odaya Gir",
+        disclaimerText:
+          "☑ Site hiçbir kullanıcı verisini KAYDETMEZ veya merkezi olarak TUTMAZ.<br />☑ Mesajlar RAM’de tutulur, sayfadan çıkışta/yenileyince her şey silinir.<br />☑ Aynı <b>Seed</b> ve (varsa) <b>şifre</b> giren herkesle geçici oda paylaşılır.<br /><b>DİKKAT:</b> Bu odada yazılanları yalnızca var olanlar görebilir. Geriye dönük veri kesinlikle TUTULMAZ.",
+        msgPlaceholder: "Mesajınızı yazın...",
+        sendBtn: "Gönder",
+        leaveBtn: "Çık",
+        errUsername: "Lütfen kullanıcı adınızı girin.",
+        errUsernameInvalid: "Kullanıcı adı geçersiz (2-20 harf/rakam/._-).",
+        errBanRoom: "Odaya erişiminiz engellendi.",
+        errRoomFull: "Oda dolu.",
+        errKickCooldown: "1 dakikada en fazla 1 kişi atabilirsin.",
+        kickMsg: "Kullanıcı odadan atıldı.",
+        errorSpamMsg: "Çok hızlı mesaj yazıyorsun, biraz beklemelisin.",
+        cmdNotLeader: "Bu komutu sadece lider kullanabilir.",
+        cmdUnknown: "Bilinmeyen komut.",
+        cmdKickUsage: "Kullanım: /kick kullanıcıadı",
+        cmdPasswordUsage: "Kullanım: /password yenişifre",
+        cmdMaxUserUsage: "Kullanım: /maxuser 20",
+        exitMsg: "Odadan ayrıldın.",
+        userEntered: "adlı kullanıcı odaya katıldı.",
+        userLeft: "odadan ayrıldı.",
+        usernamePlaceholder: "Bir ad girin",
+        seedPlaceholder: "Ortak seed (boşsa rastgele)",
+        commandHelpText: "Komutlar: /exit, /kick kullanıcıadı, /password yenişifre, /maxuser 20"
+      },
+      es: {
+        labelLang: "Idioma:",
+        labelUserName: "Nombre de usuario:",
+        labelSeed: "Código de Sala (Seed):",
+        joinBtn: "Entrar a la Sala",
+        disclaimerText:
+          "☑ Este sitio NO GUARDA ni centraliza datos de usuario.<br />☑ Los mensajes se mantienen en RAM y se borran al salir o recargar.<br />☑ La sala temporal es compartida por todos con el mismo <b>Seed</b> y opcional <b>contraseña</b>.<br /><b>ADVERTENCIA:</b> Solo los usuarios presentes ven los mensajes escritos. No se guarda historial.",
+        msgPlaceholder: "Escribe tu mensaje...",
+        sendBtn: "Enviar",
+        leaveBtn: "Salir",
+        errUsername: "Por favor ingresa tu nombre de usuario.",
+        errUsernameInvalid:
+          "Nombre de usuario inválido (2-20 caracteres, letras/números/._-).",
+        errBanRoom: "Estás baneado de esta sala.",
+        errRoomFull: "Sala llena.",
+        errKickCooldown: "Solo puedes expulsar a un usuario por minuto.",
+        kickMsg: "Usuario expulsado de la sala.",
+        errorSpamMsg: "Estás enviando mensajes demasiado rápido, espera un poco.",
+        cmdNotLeader: "Solo el líder puede usar este comando.",
+        cmdUnknown: "Comando desconocido.",
+        cmdKickUsage: "Uso: /kick nombredeusuario",
+        cmdPasswordUsage: "Uso: /password nuevacontraseña",
+        cmdMaxUserUsage: "Uso: /maxuser 20",
+        exitMsg: "Saliste de la sala.",
+        userEntered: "se ha unido a la sala.",
+        userLeft: "salió de la sala.",
+        usernamePlaceholder: "Ingresa un nombre",
+        seedPlaceholder: "Seed común (dejar en blanco para aleatorio)",
+        commandHelpText: "Comandos: /exit, /kick nombredeusuario, /password nuevacontraseña, /maxuser 20"
+      },
+      ru: {
+        labelLang: "Язык:",
+        labelUserName: "Имя пользователя:",
+        labelSeed: "Код комнаты (Seed):",
+        joinBtn: "Войти в комнату",
+        disclaimerText:
+          "☑ Этот сайт НЕ СОХРАНЯЕТ пользовательские данные централизованно.<br />☑ Сообщения хранятся в RAM и удаляются при выходе/обновлении страницы.<br />☑ Временная комната общая для всех с одинаковым <b>Seed</b> и (при необходимости) <b>паролем</b>.<br /><b>ВНИМАНИЕ:</b> Сообщения видят только находящиеся в комнате. История не сохраняется.",
+        msgPlaceholder: "Напишите сообщение...",
+        sendBtn: "Отправить",
+        leaveBtn: "Выйти",
+        errUsername: "Пожалуйста, введите имя пользователя.",
+        errUsernameInvalid:
+          "Недопустимое имя (2-20 символов, буквы/цифры/._-).",
+        errBanRoom: "Вы забанены в этой комнате.",
+        errRoomFull: "Комната полна.",
+        errKickCooldown: "Вы можете выгнать только одного пользователя в минуту.",
+        kickMsg: "Пользователь выгнан из комнаты.",
+        errorSpamMsg: "Вы отправляете сообщения слишком быстро, подождите.",
+        cmdNotLeader: "Только лидер может использовать эту команду.",
+        cmdUnknown: "Неизвестная команда.",
+        cmdKickUsage: "Используйте: /kick имяпользователя",
+        cmdPasswordUsage: "Используйте: /password новыйпароль",
+        cmdMaxUserUsage: "Используйте: /maxuser 20",
+        exitMsg: "Вы покинули комнату.",
+        userEntered: "присоединился к комнате.",
+        userLeft: "покинул комнату.",
+        usernamePlaceholder: "Введите имя",
+        seedPlaceholder: "Общий seed (оставьте пустым для случайного)",
+        commandHelpText: "Команды: /exit, /kick имяпользователя, /password новыйпароль, /maxuser 20"
+      },
+      ar: {
+        labelLang: "اللغة:",
+        labelUserName: "اسم المستخدم:",
+        labelSeed: "رمز الغرفة (Seed):",
+        joinBtn: "دخول الغرفة",
+        disclaimerText:
+          "☑ هذا الموقع لا يخزن بيانات المستخدمين مركزياً.<br />☑ تبقى الرسائل في الذاكرة المؤقتة (RAM) وتمحى عند الخروج أو تحديث الصفحة.<br />☑ الغرفة مؤقتة ويشترك فيها كل من يملك نفس <b>الـSeed</b> وكلمة السر الاختيارية.<br /><b>تحذير:</b> الرسائل تظهر فقط للحاضرين. لا يتم حفظ أي بيانات سابقة.",
+        msgPlaceholder: "اكتب رسالتك...",
+        sendBtn: "إرسال",
+        leaveBtn: "خروج",
+        errUsername: "يرجى إدخال اسم المستخدم.",
+        errUsernameInvalid: "اسم المستخدم غير صالح (2-20 حرف/رقم/._-).",
+        errBanRoom: "تم حظرك من هذه الغرفة.",
+        errRoomFull: "الغرفة ممتلئة.",
+        errKickCooldown: "يمكنك طرد مستخدم واحد فقط في الدقيقة.",
+        kickMsg: "تم طرد المستخدم من الغرفة.",
+        errorSpamMsg: "أنت ترسل الرسائل بسرعة كبيرة، يرجى الانتظار.",
+        cmdNotLeader: "يمكن للقائد فقط استخدام هذا الأمر.",
+        cmdUnknown: "أمر غير معروف.",
+        cmdKickUsage: "الاستخدام: /kick اسم المستخدم",
+        cmdPasswordUsage: "الاستخدام: /password كلمة المرور الجديدة",
+        cmdMaxUserUsage: "الاستخدام: /maxuser 20",
+        exitMsg: "لقد غادرت الغرفة.",
+        userEntered: "انضم إلى الغرفة.",
+        userLeft: "غادر الغرفة.",
+        usernamePlaceholder: "أدخل اسمًا",
+        seedPlaceholder: "Seed المشترك (اتركه فارغًا للعشوائي)",
+        commandHelpText: "الأوامر: /exit، /kick اسم المستخدم، /password كلمة المرور الجديدة، /maxuser 20"
+      }
+    };
+
+    let rooms = {};
+    let myName = "", mySeed = "", myRoomPass = "", myIp = genPseudoIp();
+    let myLeader = false;
+    let lastSent = 0;
+
+    function genPseudoIp() {
+      return Math.floor(Math.random() * 1e10).toString(36) + String(Date.now()).slice(-5);
+    }
+    function randomSeed(len=10) {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._";
+      let s = "";
+      for (let i=0; i<len; i++) s+=chars.charAt(Math.floor(Math.random()*chars.length));
+      return s;
+    }
+    function sanitize(str) {
+      return String(str).replace(/[<>&"]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+    }
+    function getTranslation(key) {
+      const lang = document.getElementById("languageSelect").value || "en";
+      return translations[lang][key] || "";
+    }
+
+    function applyLanguage(lang) {
+      const trns = translations[lang];
+      if(!trns) return;
+      document.getElementById("labelLang").textContent = trns.labelLang;
+      document.getElementById("labelUserName").textContent = trns.labelUserName;
+      document.getElementById("labelSeed").textContent = trns.labelSeed;
+      document.getElementById("joinBtn").textContent = trns.joinBtn;
+      document.getElementById("disclaimerText").innerHTML = trns.disclaimerText;
+      document.getElementById("msgText").placeholder = trns.msgPlaceholder;
+      document.getElementById("sendBtn").textContent = trns.sendBtn;
+      document.getElementById("leaveBtn").textContent = trns.leaveBtn;
+      document.getElementById("username").placeholder = trns.usernamePlaceholder;
+      document.getElementById("seed").placeholder = trns.seedPlaceholder;
+      document.getElementById("commandHelp").textContent = trns.commandHelpText;
+      document.body.setAttribute("dir", lang==="ar" ? "rtl" : "ltr");
+    }
+
+    const langSelect = document.getElementById("languageSelect");
+    langSelect.value = "en";
+    applyLanguage("en");
+    langSelect.addEventListener("change", e=>{
+      applyLanguage(e.target.value);
+    });
+
+    function validateUserName(name) {
+      return /^[A-Za-z0-9_.\-]{2,20}$/.test(name);
+    }
+    function getUniqueUserName(room, name) {
+      let count = 0;
+      let base = name;
+      for (let u of room.users) {
+        let nm = u.name.replace(/^\*/, "");
+        if (nm === base || nm.startsWith(base + "(")) count++;
+      }
+      if (count === 0) return "*" + base;
+      return "*" + base + `(${count})`;
+    }
+
+    function showErr(msg) {
+      document.getElementById("errNote").textContent = msg;
+    }
+    function clearErr() {
+      document.getElementById("errNote").textContent = "";
+    }
+    function showBlock(msg) {
+      let block = document.getElementById("blockInfo");
+      block.style.display = "block";
+      block.textContent = msg;
+    }
+    function clearBlock() {
+      let block = document.getElementById("blockInfo");
+      block.style.display = "none";
+      block.textContent = "";
+    }
+
+    function joinRoom() {
+      clearErr();
+      clearBlock();
+      let name = document.getElementById("username").value.trim();
+      let seed = document.getElementById("seed").value.trim();
+      let lang = langSelect.value;
+      if (!name) { showErr(getTranslation("errUsername")); return; }
+      if (!validateUserName(name)) { showErr(getTranslation("errUsernameInvalid")); return; }
+      if(!seed) seed = randomSeed(10);
+
+      if (!rooms[seed]) {
+        rooms[seed] = {
+          leaderIp: myIp,
+          leaderName: name,
+          pass: "",
+          users: [],
+          banList: [],
+          maxUsers: 20,
+          lastKick: 0,
+          messages: []
+        };
+      }
+      let room = rooms[seed];
+      if(room.banList.includes(myIp)) {
+        showErr(getTranslation("errBanRoom"));
+        return;
+      }
+      if(room.pass) {
+        let pwd = prompt(getTranslation("passPrompt"));
+        if(pwd === null) return;
+        if(pwd !== room.pass) {
+          showErr(getTranslation("errWrongPass"));
+          return;
+        }
+        proceedJoin(room, name, seed);
+      } else {
+        proceedJoin(room, name, seed);
+      }
+    }
+
+    function proceedJoin(room, name, seed) {
+      if(room.users.length >= room.maxUsers) {
+        showErr(getTranslation("errRoomFull"));
+        return;
+      }
+      let uname = getUniqueUserName(room, name);
+      myName = uname;
+      mySeed = seed;
+      myRoomPass = room.pass || "";
+      myLeader = (room.leaderIp === myIp);
+      if(!room.users.find(u=>u.ip===myIp)) {
+        room.users.push({ip: myIp, name: uname});
+      }
+      postSysMsg(`${uname} ${getTranslation("userEntered")}`);
+      updateUIAfterJoin();
+    }
+
+    function updateUIAfterJoin() {
+      document.getElementById("mainScreen").style.display = "none";
+      document.getElementById("chatScreen").style.display = "";
+      document.getElementById("showSeed").textContent = mySeed;
+      renderUserList();
+      renderAdminPanel();
+      renderMessages();
+      document.getElementById("msgText").value = "";
+      document.getElementById("msgText").focus();
+      clearErr();
+      clearBlock();
+    }
+
+    function renderUserList() {
+      if(!mySeed) return;
+      let room = rooms[mySeed];
+      if(!room) return;
+      let html = `<div style="margin-top:7px;">Users (${room.users.length}):</div>`;
+      let canKick = room.leaderIp === myIp;
+      let canKickAnyone = Date.now() - room.lastKick >= 60000;
+      room.users.forEach(u=>{
+        html += `<div class="userlist-row">${sanitize(u.name)}`;
+        if(canKick && u.ip !== myIp)
+          html += ` <button class="userkick-btn" onclick="kickUser('${u.ip}')" ${!canKickAnyone?"disabled":""}>Kick</button>`;
+        html += `</div>`;
+      });
+      document.getElementById("userlist").innerHTML = html;
+    }
+
+    function kickUser(ip) {
+      let room = rooms[mySeed];
+      if(!room) return;
+      if(room.leaderIp !== myIp) {
+        showBlock(getTranslation("cmdNotLeader"));
+        return;
+      }
+      if(Date.now() - room.lastKick < 60000) {
+        showBlock(getTranslation("errKickCooldown"));
+        return;
+      }
+      if(ip === myIp) return;
+      let userToKick = room.users.find(u=>u.ip===ip);
+      if(!userToKick) return;
+      room.banList.push(ip);
+      room.users = room.users.filter(u=>u.ip!==ip);
+      room.lastKick = Date.now();
+      postSysMsg(`${userToKick.name} ${getTranslation("kickMsg")}`);
+      renderUserList();
+      renderAdminPanel();
+    }
+
+    function leaveRoom() {
+      if(!mySeed) return;
+      let room = rooms[mySeed];
+      if(!room) return;
+      room.users = room.users.filter(u=>u.ip!==myIp);
+      postSysMsg(`${myName} ${getTranslation("userLeft")}`);
+      renderUserList();
+      setTimeout(()=>{
+        document.getElementById("mainScreen").style.display = "";
+        document.getElementById("chatScreen").style.display = "none";
+        rooms[mySeed] = undefined;
+        myLeader = false;
+        mySeed = "";
+        myName = "";
+        clearErr();
+        clearBlock();
+      }, 300);
+    }
+
+    function renderAdminPanel() {
+      const panel = document.getElementById("roomadmin");
+      if(!panel) return;
+      panel.style.display = "block";
+      panel.innerHTML = `<div>${getTranslation("commandHelpText")}</div>`;
+    }
+
+    function sendMsg(e) {
+      e.preventDefault();
+      let input = document.getElementById("msgText");
+      let text = input.value.trim();
+      if(!text) return;
+
+      let now = Date.now();
+      let lang = document.getElementById("languageSelect").value;
+
+      if(now - lastSent < 5000) {
+        showBlock(getTranslation("errorSpamMsg"));
+        return;
+      }
+      clearBlock();
+
+      if(text.startsWith("/")) {
+        handleCommand(text);
+        input.value = "";
+        return;
+      }
+
+      let room = rooms[mySeed];
+      if(!room) return;
+
+      room.messages.push({user: myName, txt: text, ts: now, ip: myIp});
+      if(room.messages.length > 50) room.messages = room.messages.slice(-50);
+      renderMessages();
+      input.value = "";
+      lastSent = now;
+      scrollDown();
+    }
+
+    function handleCommand(text) {
+      let lang = document.getElementById("languageSelect").value;
+      let room = rooms[mySeed];
+      if(!room) return;
+
+      let args = text.split(" ");
+      let cmd = args[0].toLowerCase();
+
+      switch(cmd) {
+        case "/exit":
+          leaveRoom();
+          alert(getTranslation("exitMsg"));
+          break;
+        case "/kick":
+          if(!myLeader) {
+            showBlock(getTranslation("cmdNotLeader"));
+            return;
+          }
+          if(args.length < 2) {
+            showBlock(getTranslation("cmdKickUsage"));
+            return;
+          }
+          let targetName = args.slice(1).join(" ").trim();
+          let targetUser = room.users.find(u=>u.name === targetName);
+          if(!targetUser) {
+            showBlock(getTranslation("cmdKickUsage"));
+            return;
+          }
+          if(Date.now() - room.lastKick < 60000) {
+            showBlock(getTranslation("errKickCooldown"));
+            return;
+          }
+          kickUser(targetUser.ip);
+          break;
+        case "/password":
+          if(!myLeader) {
+            showBlock(getTranslation("cmdNotLeader"));
+            return;
+          }
+          if(args.length < 2) {
+            showBlock(getTranslation("cmdPasswordUsage"));
+            return;
+          }
+          let newPass = args.slice(1).join(" ").trim();
+          room.pass = newPass;
+          showBlock("Password changed.");
+          break;
+        case "/maxuser":
+          if(!myLeader) {
+            showBlock(getTranslation("cmdNotLeader"));
+            return;
+          }
+          if(args.length < 2) {
+            showBlock(getTranslation("cmdMaxUserUsage"));
+            return;
+          }
+          let val = parseInt(args[1], 10);
+          if(isNaN(val) || val < 2 || val > 20) {
+            showBlock("Value must be a number between 2 and 20.");
+            return;
+          }
+          room.maxUsers = val;
+          showBlock("Max user limit set to " + val);
+          break;
+        default:
+          showBlock(getTranslation("cmdUnknown"));
+      }
+    }
+
+    function renderMessages() {
+      let room = rooms[mySeed];
+      if(!room) return;
+      let board = document.getElementById("board");
+      board.innerHTML = "";
+      for(let m of room.messages) {
+        if(m.sys) {
+          let div = document.createElement("div");
+          div.className = "msg-row sysmsg";
+          div.textContent = m.txt;
+          board.appendChild(div);
+        } else {
+          let div = document.createElement("div");
+          div.className = "msg-row";
+          let unameSpan = document.createElement("span");
+          unameSpan.className = "msg-username";
+          unameSpan.textContent = sanitize(m.user) + ":";
+          let msgSpan = document.createElement("span");
+          msgSpan.className = (m.ip === myIp ? "mymsg" : "usermsg");
+          msgSpan.textContent = sanitize(m.txt);
+          div.appendChild(unameSpan);
+          div.appendChild(msgSpan);
+          board.appendChild(div);
+        }
+      }
+      scrollDown();
+    }
+
+    function postSysMsg(txt) {
+      let room = rooms[mySeed];
+      if(!room) return;
+      room.messages.push({sys:true, txt:txt, ts:Date.now()});
+      if(room.messages.length > 50) room.messages = room.messages.slice(-50);
+      renderMessages();
+    }
+
+    function scrollDown() {
+      const board = document.getElementById("board");
+      setTimeout(() => { board.scrollTop = board.scrollHeight; }, 10);
+    }
+  </script>
+</body>
+</html>
