@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoxChat - VHS Retro Sohbet</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --fox-bg: hsl(240, 26%, 16%);
+            --fox-card: hsl(248, 40%, 19%);
+            --fox-border: hsl(248, 26%, 37%);
+            --fox-accent: hsl(45, 100%, 76%);
+            --fox-text: hsl(248, 100%, 97%);
+            --fox-primary: hsl(255, 46%, 49%);
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--fox-bg);
+            color: var(--fox-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* VHS Filter Effects */
+        .vhs-filter {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .vhs-filter::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 0, 0.03) 2px,
+                rgba(0, 255, 0, 0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 1000;
+            animation: vhs-scanlines 0.1s linear infinite;
+        }
+        
+        .vhs-filter::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.3) 100%);
+            pointer-events: none;
+            z-index: 1001;
+        }
+        
+        @keyframes vhs-scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+        
+        .vhs-noise {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.05;
+            background-image: 
+                radial-gradient(circle at 20% 80%, #000000 1px, transparent 1px),
+                radial-gradient(circle at 80% 20%, #000000 1px, transparent 1px),
+                radial-gradient(circle at 40% 40%, #000000 1px, transparent 1px);
+            background-size: 2px 2px, 3px 3px, 4px 4px;
+            animation: vhs-noise 0.2s infinite;
+            pointer-events: none;
+            z-index: 999;
+        }
+        
+        @keyframes vhs-noise {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-1px, 1px); }
+            50% { transform: translate(1px, -1px); }
+            75% { transform: translate(-1px, -1px); }
+        }
+        
+        .vhs-distortion {
+            animation: vhs-distortion 8s infinite;
+        }
+        
+        @keyframes vhs-distortion {
+            0%, 90%, 100% { transform: skew(0deg); filter: hue-rotate(0deg); }
+            2% { transform: skew(0.5deg); filter: hue-rotate(90deg); }
+            4% { transform: skew(-0.5deg); filter: hue-rotate(0deg); }
+            6% { transform: skew(0deg); filter: hue-rotate(-90deg); }
+        }
+        
+        /* Password Warning Animation */
+        .password-warning {
+            animation: password-pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes password-pulse {
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1);
+                filter: drop-shadow(0 0 5px rgba(255, 165, 0, 0.5));
+            }
+            50% { 
+                opacity: 0.7; 
+                transform: scale(1.05);
+                filter: drop-shadow(0 0 15px rgba(255, 165, 0, 0.8));
+            }
+        }
+        
+        .password-entry-animation {
+            animation: password-entry 0.8s ease-out;
+        }
+        
+        @keyframes password-entry {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9);
+            }
+            50% {
+                opacity: 0.8;
+                transform: translateY(5px) scale(1.02);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* VHS Toggle Button */
+        .vhs-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1002;
+            background: rgba(168, 85, 247, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: rgb(168, 85, 247);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .vhs-toggle:hover {
+            background: rgba(168, 85, 247, 0.2);
+            border-color: rgba(168, 85, 247, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .vhs-disabled { filter: none !important; animation: none !important; }
+        .vhs-disabled::before, .vhs-disabled::after { display: none !important; }
+        .vhs-disabled .vhs-noise { display: none !important; }
+        
+        /* Terminal Styles */
+        .terminal {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .terminal-content {
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .ascii-fox {
+            font-size: 12px;
+            line-height: 12px;
+            color: hsl(265, 100%, 70%);
+            white-space: pre;
+            margin: 20px 0;
+        }
+        
+        .typewriter {
+            overflow: hidden;
+            border-right: 2px solid;
+            animation: typing 2s steps(40, end), blink 0.75s step-end infinite;
+        }
+        
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        @keyframes blink {
+            from, to { border-color: transparent; }
+            50% { border-color: #0f0; }
+        }
+        
+        /* Card Styles */
+        .foxchat-card {
+            background: var(--fox-card);
+            border: 2px solid var(--fox-primary);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            margin: 20px auto;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+        }
+        
+        .foxchat-title {
+            font-size: 1.7rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: var(--fox-accent);
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 3px 12px rgba(255, 193, 7, 0.3);
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--fox-accent);
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--fox-bg);
+            border: 2px solid var(--fox-border);
+            border-radius: 8px;
+            color: var(--fox-text);
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--fox-primary);
+        }
+        
+        .form-button {
+            width: 100%;
+            padding: 12px;
+            background: var(--fox-primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .form-button:hover {
+            background: hsl(255, 46%, 40%);
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .modal {
+            background: var(--fox-card);
+            border: 2px solid var(--fox-border);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            margin: 20px;
+        }
+        
+        .warning-icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .modal-title {
+            color: var(--fox-accent);
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .modal-description {
+            color: var(--fox-text);
+            opacity: 0.8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .button-secondary {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--fox-border);
+            border-radius: 6px;
+            color: var(--fox-text);
+            cursor: pointer;
+        }
+        
+        .hidden { display: none; }
+        .center { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="vhs-filter vhs-distortion">
+        <div class="vhs-noise"></div>
+        
+        <!-- VHS Toggle Button -->
+        <button class="vhs-toggle" onclick="toggleVHS()">
+            📺 VHS Modu
+        </button>
+        
+        <!-- Terminal Intro -->
+        <div id="terminal" class="terminal">
+            <div class="terminal-content">
+                <div class="ascii-fox">
+      /\   /\   
+     (  ._. )  
+      >-(_)-<   
+    </div>
+                <div id="terminal-text">
+                    <div class="typewriter">FoxChat Terminal v2.5.0</div>
+                </div>
+                <div style="margin-top: 20px; color: #666;">
+                    Devam etmek için herhangi bir yere tıklayın...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Login Screen -->
+        <div id="login" class="center hidden">
+            <div class="foxchat-card">
+                <h1 class="foxchat-title">FoxChat</h1>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Kullanıcı Adı:</label>
+                        <input type="text" id="username" class="form-input" placeholder="Adınızı girin" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Oda Kodu (Seed):</label>
+                        <input type="text" id="roomcode" class="form-input" placeholder="Oda kodunu girin">
+                    </div>
+                    <button type="submit" class="form-button">Odaya Gir</button>
+                </form>
+                <div id="error" style="color: #ff6b6b; margin-top: 16px; text-align: center;"></div>
+            </div>
+        </div>
+        
+        <!-- Chat Interface -->
+        <div id="chat" class="hidden">
+            <div style="padding: 20px;">
+                <h2 style="color: var(--fox-accent); text-align: center; margin-bottom: 20px;">Sohbet Odası</h2>
+                <div id="messages" style="height: 400px; overflow-y: auto; background: var(--fox-card); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <input type="text" id="messageInput" class="form-input" placeholder="Mesajınızı yazın..." style="flex: 1;">
+                    <button onclick="sendMessage()" class="form-button" style="width: auto; padding: 12px 24px;">Gönder</button>
+                </div>
+                <button onclick="leaveRoom()" style="margin-top: 16px; background: #dc3545;" class="form-button">Odadan Çık</button>
+            </div>
+        </div>
+        
+        <!-- Password Warning Modal -->
+        <div id="passwordWarning" class="modal-overlay hidden">
+            <div class="modal password-warning">
+                <div class="warning-icon">⚠️🛡️</div>
+                <div class="modal-title">Şifre Gerekli</div>
+                <div class="modal-description">
+                    Bu oda şifre korumalı. Güvenli erişim hazırlanıyor...
+                </div>
+                <div style="text-align: center; font-family: monospace; color: var(--fox-accent);">
+                    <span id="warningRoomCode"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Password Dialog -->
+        <div id="passwordDialog" class="modal-overlay hidden">
+            <div class="modal password-entry-animation">
+                <div class="modal-title">🔐 Şifre Girin</div>
+                <div class="modal-description">
+                    Odaya katılmak için şifreyi girin:
+                </div>
+                <div style="margin-bottom: 16px; font-family: monospace; color: var(--fox-accent); text-align: center;">
+                    "<span id="dialogRoomCode"></span>"
+                </div>
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <input type="password" id="roomPassword" class="form-input" placeholder="Şifre girin" required autofocus>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="button-secondary" onclick="cancelPassword()">İptal</button>
+                        <button type="submit" class="form-button">🔓 Kilidi Aç</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRoom = null;
+        let currentUser = null;
+        let vhsEnabled = true;
+        let messages = [];
+        let pendingRoomData = null;
+        
+        // VHS Toggle
+        function toggleVHS() {
+            vhsEnabled = !vhsEnabled;
+            const app = document.getElementById('app');
+            const toggle = document.querySelector('.vhs-toggle');
+            
+            if (vhsEnabled) {
+                app.className = 'vhs-filter vhs-distortion';
+                toggle.textContent = '📺 VHS Modu';
+                document.querySelector('.vhs-noise').style.display = 'block';
+            } else {
+                app.className = 'vhs-disabled';
+                toggle.textContent = '📺 VHS Kapalı';
+                document.querySelector('.vhs-noise').style.display = 'none';
+            }
+        }
+        
+        // Terminal intro
+        document.getElementById('terminal').addEventListener('click', function() {
+            document.getElementById('terminal').classList.add('hidden');
+            document.getElementById('login').classList.remove('hidden');
+        });
+        
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const roomcode = document.getElementById('roomcode').value.trim() || Math.random().toString(36).substr(2, 8);
+            
+            if (username.length < 2) {
+                showError('Kullanıcı adı en az 2 karakter olmalı');
+                return;
+            }
+            
+            // Demo: Show password warning for rooms ending with 'p'
+            if (roomcode.endsWith('p')) {
+                showPasswordWarning(roomcode, username);
+            } else {
+                joinRoom(username, roomcode);
+            }
+        });
+        
+        // Password form
+        document.getElementById('passwordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('roomPassword').value;
+            
+            if (pendingRoomData) {
+                // Demo: Accept password "123"
+                if (password === '123') {
+                    hidePasswordDialog();
+                    joinRoom(pendingRoomData.username, pendingRoomData.roomcode, password);
+                } else {
+                    showError('Yanlış şifre! (Demo: "123" yazın)');
+                }
+            }
+        });
+        
+        // Message input
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        function showPasswordWarning(roomcode, username) {
+            pendingRoomData = { roomcode, username };
+            document.getElementById('warningRoomCode').textContent = roomcode;
+            document.getElementById('passwordWarning').classList.remove('hidden');
+            
+            // Show for 2.5 seconds then switch to password dialog
+            setTimeout(() => {
+                document.getElementById('passwordWarning').classList.add('hidden');
+                setTimeout(() => {
+                    showPasswordDialog(roomcode);
+                }, 300);
+            }, 2500);
+        }
+        
+        function showPasswordDialog(roomcode) {
+            document.getElementById('dialogRoomCode').textContent = roomcode;
+            document.getElementById('passwordDialog').classList.remove('hidden');
+            document.getElementById('roomPassword').focus();
+        }
+        
+        function hidePasswordDialog() {
+            document.getElementById('passwordDialog').classList.add('hidden');
+            document.getElementById('roomPassword').value = '';
+        }
+        
+        function cancelPassword() {
+            hidePasswordDialog();
+            pendingRoomData = null;
+            showError('Oda girişi iptal edildi');
+        }
+        
+        function joinRoom(username, roomcode, password = null) {
+            currentUser = username;
+            currentRoom = roomcode;
+            
+            document.getElementById('login').classList.add('hidden');
+            document.getElementById('chat').classList.remove('hidden');
+            
+            // Demo message
+            addMessage('sistem', `${username} odaya katıldı! Oda kodu: ${roomcode}${password ? ' (şifre korumalı)' : ''}`);
+            addMessage('sistem', 'Bu demo versiyondur. Gerçek WebSocket bağlantısı için tam proje kullanın.');
+            
+            clearError();
+        }
+        
+        function leaveRoom() {
+            currentRoom = null;
+            currentUser = null;
+            messages = [];
+            
+            document.getElementById('chat').classList.add('hidden');
+            document.getElementById('login').classList.remove('hidden');
+            document.getElementById('messages').innerHTML = '';
+            clearError();
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (text && currentUser) {
+                addMessage(currentUser, text);
+                input.value = '';
+            }
+        }
+        
+        function addMessage(sender, text) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.marginBottom = '12px';
+            messageDiv.style.padding = '8px';
+            messageDiv.style.borderRadius = '6px';
+
+            if (sender === 'sistem') {
+                messageDiv.innerHTML = `<strong>📢 Sistem:</strong> ${text}`;
+            } else if (sender === currentUser) {
+                messageDiv.innerHTML = `<strong>You:</strong> ${text}`;
+            } else {
+                messageDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            }
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function showError(message) {
+            document.getElementById('error').textContent = message;
+            setTimeout(clearError, 5000);
+        }
+        
+        function clearError() {
+            document.getElementById('error').textContent = '';
+        }
+        
+        function clearMessages() {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = ''; // Tüm mesajları temizler
+        }
+
+        // Demo: Add welcome message after page load
+        setTimeout(() => {
+            console.log('FoxChat Demo yüklendi! VHS efektleri: ' + vhsEnabled);
+        }, 1000);
+    </script>
+</body>
+</html>
